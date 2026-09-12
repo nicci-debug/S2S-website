@@ -1,0 +1,15 @@
+project_id = "zumi"
+
+[db]
+port = 54322
+
+[api]
+enabled = true
+port = 54321
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+
+[storage]
+enabled = true
