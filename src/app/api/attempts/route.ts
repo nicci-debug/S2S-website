@@ -25,6 +25,7 @@ const requestSchema = z.object({
   activityId: z.string().min(1),
   questionId: z.string().min(1),
   given: givenAnswerSchema,
+  timeTakenMs: z.coerce.number().int().min(0).max(10 * 60 * 1000).optional(),
 });
 
 /**
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
-  const { childId, assignmentId, activityId, questionId, given } = parsed.data;
+  const { childId, assignmentId, activityId, questionId, given, timeTakenMs } = parsed.data;
 
   const { data: child } = await supabase
     .from("children")
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
     skill_id: skillId,
     given_answer: given,
     is_correct: isCorrect,
-    time_taken_ms: null,
+    time_taken_ms: timeTakenMs ?? null,
   });
 
   if (attemptError) {

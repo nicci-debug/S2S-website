@@ -34,6 +34,7 @@ interface ActivityPlayerProps {
     questionId: string;
     given: GivenAnswer;
     isCorrect: boolean;
+    timeTakenMs: number;
   }) => void | Promise<void>;
   onComplete?: (summary: { totalQuestions: number; correctCount: number }) => void | Promise<void>;
 }
@@ -67,6 +68,7 @@ export function ActivityPlayer({ activities, onAnswer, onComplete }: ActivityPla
     isCorrect: null,
   });
   const [done, setDone] = useState(false);
+  const [questionStartedAt, setQuestionStartedAt] = useState(() => Date.now());
 
   const current = flatQuestions[index];
   const total = flatQuestions.length;
@@ -74,6 +76,7 @@ export function ActivityPlayer({ activities, onAnswer, onComplete }: ActivityPla
   async function handleAnswer(given: GivenAnswer) {
     if (!current || answeredState.answered) return;
     const isCorrect = gradeAnswer(current.data, given) ?? false;
+    const timeTakenMs = Date.now() - questionStartedAt;
     setAnsweredState({ answered: true, isCorrect });
     if (isCorrect) setCorrectCount((c) => c + 1);
     await onAnswer?.({
@@ -81,6 +84,7 @@ export function ActivityPlayer({ activities, onAnswer, onComplete }: ActivityPla
       questionId: current.questionId,
       given,
       isCorrect,
+      timeTakenMs,
     });
   }
 
@@ -92,6 +96,7 @@ export function ActivityPlayer({ activities, onAnswer, onComplete }: ActivityPla
     }
     setIndex((i) => i + 1);
     setAnsweredState({ answered: false, isCorrect: null });
+    setQuestionStartedAt(Date.now());
   }
 
   if (total === 0) {

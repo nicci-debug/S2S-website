@@ -5,6 +5,7 @@ import { requireParentSession } from "@/lib/auth-helpers";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { AVATAR_OPTIONS } from "@/lib/constants";
+import { endOfWeek, getWeeklyInsights, startOfWeek } from "@/lib/insights";
 
 export const metadata: Metadata = { title: "Parent dashboard — Zumi" };
 
@@ -21,6 +22,12 @@ export default async function ParentDashboardPage() {
     redirect("/onboarding");
   }
 
+  const weekStart = startOfWeek(new Date());
+  const weekEnd = endOfWeek(weekStart);
+  const insightsByChild = await Promise.all(
+    children.map((child) => getWeeklyInsights(supabase, child.id, weekStart, weekEnd)),
+  );
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -31,8 +38,9 @@ export default async function ParentDashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {children.map((child) => {
+        {children.map((child, i) => {
           const avatar = AVATAR_OPTIONS.find((a) => a.id === child.avatar_id) ?? AVATAR_OPTIONS[0];
+          const insights = insightsByChild[i];
           return (
             <Card key={child.id}>
               <div className="flex items-center gap-4">
@@ -57,6 +65,36 @@ export default async function ParentDashboardPage() {
                 <span className="rounded-full bg-zumi-violet-100 px-3 py-1 font-semibold text-zumi-violet-700">
                   {child.total_xp} XP
                 </span>
+              </div>
+
+              <div className="mt-4 rounded-2xl bg-zumi-cloud p-3 text-sm">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zumi-slate-500">
+                  This week
+                </p>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="font-extrabold text-zumi-ink">{insights.minutesLearned}</p>
+                    <p className="text-xs text-zumi-slate-500">min learned</p>
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-zumi-ink">{insights.activitiesCompleted}</p>
+                    <p className="text-xs text-zumi-slate-500">activities</p>
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-zumi-ink">{insights.accuracy}%</p>
+                    <p className="text-xs text-zumi-slate-500">accuracy</p>
+                  </div>
+                </div>
+                {insights.strongest ? (
+                  <p className="mt-2 text-xs text-zumi-mint-500">
+                    Improving: <span className="font-semibold">{insights.strongest.name}</span>
+                  </p>
+                ) : null}
+                {insights.weakest ? (
+                  <p className="mt-1 text-xs text-zumi-coral-600">
+                    Needs practice: <span className="font-semibold">{insights.weakest.name}</span>
+                  </p>
+                ) : null}
               </div>
 
               <div className="mt-4 flex gap-2">

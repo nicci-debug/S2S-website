@@ -15,11 +15,11 @@ export function SessionRunner({ childId, assignmentId, activities }: SessionRunn
   return (
     <ActivityPlayer
       activities={activities}
-      onAnswer={async ({ activityId, questionId, given }) => {
+      onAnswer={async ({ activityId, questionId, given, timeTakenMs }) => {
         await fetch("/api/attempts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ childId, assignmentId, activityId, questionId, given }),
+          body: JSON.stringify({ childId, assignmentId, activityId, questionId, given, timeTakenMs }),
         }).catch(() => {
           // Best-effort: a dropped attempt write shouldn't block the session.
         });
