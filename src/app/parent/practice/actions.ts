@@ -47,7 +47,7 @@ export async function createManualPracticeSetAction(
     ...parsed.data,
     parentId: parentProfile.id,
     createdBy: user.id,
-    sourceType: "manual",
+    sourceType: parsed.data.usedAi ? "ai" : "manual",
   });
 
   if ("error" in result) {

@@ -9,7 +9,6 @@ export interface PersistPracticeSetInput extends PracticeSetDraft {
   parentId: string;
   createdBy: string;
   sourceType: PracticeSetSourceType;
-  sourceInput?: string | null;
 }
 
 /**

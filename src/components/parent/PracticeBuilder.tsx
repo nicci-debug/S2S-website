@@ -48,6 +48,10 @@ export function PracticeBuilder({ childOptions, subjects, defaultChildId }: Prac
   const [title, setTitle] = useState("");
   const [activities, setActivities] = useState<DraftActivity[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [usedAi, setUsedAi] = useState(false);
   const [addType, setAddType] = useState<ActivityType>("multiple_choice");
 
   const validActivities = useMemo(
@@ -77,6 +81,8 @@ export function PracticeBuilder({ childOptions, subjects, defaultChildId }: Prac
     childId,
     subjectId,
     title,
+    usedAi,
+    sourceInput: usedAi ? aiInput : undefined,
     activities: activities.map((a) => ({
       type: a.type,
       title: a.title,
@@ -91,6 +97,44 @@ export function PracticeBuilder({ childOptions, subjects, defaultChildId }: Prac
 
   function removeActivity(tempId: string) {
     setActivities((prev) => prev.filter((a) => a.tempId !== tempId));
+  }
+
+  async function generateWithAi() {
+    if (!childId || !subjectId || aiInput.trim().length < 3) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const response = await fetch("/api/ai/generate-practice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ childId, subjectId, sourceInput: aiInput }),
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        setAiError(body.error ?? "Could not generate practice content.");
+        return;
+      }
+      const result = body.result as {
+        title: string;
+        activities: Array<Omit<DraftActivity, "tempId">>;
+      };
+      if (!title.trim()) setTitle(result.title);
+      setUsedAi(true);
+      setActivities((prev) => [
+        ...prev,
+        ...result.activities.map((a) => ({
+          tempId: crypto.randomUUID(),
+          type: a.type,
+          title: a.title,
+          instructions: a.instructions ?? "",
+          questions: a.questions,
+        })),
+      ]);
+    } catch {
+      setAiError("Could not reach the AI service. Please try again.");
+    } finally {
+      setAiLoading(false);
+    }
   }
 
   if (previewOpen) {
@@ -148,6 +192,29 @@ export function PracticeBuilder({ childOptions, subjects, defaultChildId }: Prac
             placeholder="e.g. Afrikaans spelling — week 4"
           />
         </div>
+      </Card>
+
+      <Card className="bg-zumi-violet-50/60">
+        <FieldLabel htmlFor="aiInput" hint="e.g. a spelling list, vocab list, or a maths topic">
+          Paste this week&apos;s schoolwork
+        </FieldLabel>
+        <textarea
+          id="aiInput"
+          value={aiInput}
+          onChange={(e) => setAiInput(e.target.value)}
+          rows={4}
+          className="w-full rounded-xl border-2 border-zumi-slate-200 bg-white px-4 py-2.5 text-sm text-zumi-ink placeholder:text-zumi-slate-500 focus:border-zumi-violet-500 focus:outline-none focus:ring-4 focus:ring-zumi-violet-100"
+          placeholder={"padda\nfabel\nsprokie\ngoue bal\nbelowe"}
+        />
+        <FieldError>{aiError ?? undefined}</FieldError>
+        <Button
+          type="button"
+          className="mt-3"
+          onClick={generateWithAi}
+          disabled={aiLoading || aiInput.trim().length < 3}
+        >
+          {aiLoading ? "Generating…" : "Generate with AI"}
+        </Button>
       </Card>
 
       {activities.map((activity) => (

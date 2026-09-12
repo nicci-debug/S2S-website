@@ -5,6 +5,8 @@ export const practiceSetDraftSchema = z.object({
   childId: z.string().min(1),
   subjectId: z.string().min(1),
   title: z.string().trim().min(1, "Give this practice a title").max(120),
+  usedAi: z.boolean().optional(),
+  sourceInput: z.string().max(4000).optional(),
   activities: z
     .array(
       z.object({
