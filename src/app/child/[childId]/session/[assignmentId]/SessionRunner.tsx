@@ -15,18 +15,29 @@ export function SessionRunner({ childId, assignmentId, activities }: SessionRunn
   return (
     <ActivityPlayer
       activities={activities}
-      onAnswer={async ({ activityId, questionId, given, isCorrect }) => {
+      onAnswer={async ({ activityId, questionId, given }) => {
         await fetch("/api/attempts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ childId, assignmentId, activityId, questionId, given, isCorrect }),
+          body: JSON.stringify({ childId, assignmentId, activityId, questionId, given }),
         }).catch(() => {
           // Best-effort: a dropped attempt write shouldn't block the session.
         });
       }}
-      onComplete={async () => {
-        await fetch(`/api/assignments/${assignmentId}/complete`, { method: "POST" }).catch(() => {});
-        router.push(`/child/${childId}/dashboard`);
+      onComplete={async ({ totalQuestions, correctCount }) => {
+        const response = await fetch(`/api/assignments/${assignmentId}/complete`, {
+          method: "POST",
+        }).catch(() => null);
+        const summary = response && response.ok ? await response.json() : {};
+
+        const params = new URLSearchParams({
+          total: String(totalQuestions),
+          correct: String(correctCount),
+          xp: String(summary.xpAwarded ?? 0),
+          streak: String(summary.currentStreak ?? 0),
+          badges: (summary.newBadgeNames ?? []).join("|"),
+        });
+        router.push(`/child/${childId}/rewards?${params.toString()}`);
       }}
     />
   );

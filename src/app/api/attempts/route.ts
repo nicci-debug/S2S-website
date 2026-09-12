@@ -4,6 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { parseQuestionData } from "@/lib/activity-schema";
 import { gradeAnswer, type GivenAnswer } from "@/lib/grading";
 import { applyAttemptToProgress } from "@/lib/adaptive";
+import { awardXp } from "@/lib/xp";
+import { xpForAnswer } from "@/lib/gamification";
 
 const givenAnswerSchema = z.union([
   z.object({ kind: z.literal("text"), value: z.string() }),
@@ -135,5 +137,8 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ isCorrect });
+  const xpAwarded = xpForAnswer(isCorrect);
+  await awardXp(supabase, childId, xpAwarded, "correct_answer", assignmentId ?? null);
+
+  return NextResponse.json({ isCorrect, xpAwarded });
 }

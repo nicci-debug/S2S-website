@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { completeSession } from "@/lib/xp";
 
 /**
- * Marks an assignment completed. XP/streak/badge awarding is layered on
- * top of this in Phase 9 — this route only owns the progress-tracking
- * concern (did the child finish the session) for Phase 8.
+ * Marks an assignment completed and awards session-complete XP, updates
+ * the streak, and evaluates badges (lib/xp.ts) — the gamification layer on
+ * top of Phase 8's plain "did the child finish" tracking.
  */
 export async function POST(
   _request: Request,
@@ -22,7 +23,7 @@ export async function POST(
 
   const { data: assignment } = await supabase
     .from("assignments")
-    .select("id, children(parent_profiles(user_id))")
+    .select("id, child_id, children(parent_profiles(user_id))")
     .eq("id", assignmentId)
     .maybeSingle();
 
@@ -39,5 +40,7 @@ export async function POST(
     return NextResponse.json({ error: "Could not complete assignment." }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  const summary = await completeSession(supabase, assignment.child_id, assignmentId);
+
+  return NextResponse.json(summary);
 }
