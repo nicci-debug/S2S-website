@@ -15,18 +15,37 @@ interface ChildFormState {
   error?: string;
 }
 
+interface ChildFormDefaultValues {
+  name?: string;
+  age?: number;
+  grade?: string;
+  homeLanguage?: string;
+  avatarId?: string;
+  subjectIds?: string[];
+}
+
 interface ChildFormProps {
   action: (state: ChildFormState, formData: FormData) => Promise<ChildFormState>;
   subjects: SubjectOption[];
   submitLabel: string;
+  defaultValues?: ChildFormDefaultValues;
+  hiddenFields?: Record<string, string>;
 }
 
 const initialState: ChildFormState = {};
 
-export function ChildForm({ action, subjects, submitLabel }: ChildFormProps) {
+export function ChildForm({
+  action,
+  subjects,
+  submitLabel,
+  defaultValues,
+  hiddenFields,
+}: ChildFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
-  const [avatarId, setAvatarId] = useState<string>(AVATAR_OPTIONS[0].id);
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [avatarId, setAvatarId] = useState<string>(defaultValues?.avatarId ?? AVATAR_OPTIONS[0].id);
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>(
+    defaultValues?.subjectIds ?? [],
+  );
 
   function toggleSubject(id: string) {
     setSelectedSubjects((prev) =>
@@ -36,19 +55,33 @@ export function ChildForm({ action, subjects, submitLabel }: ChildFormProps) {
 
   return (
     <form action={formAction} className="space-y-6">
+      {hiddenFields
+        ? Object.entries(hiddenFields).map(([name, value]) => (
+            <input key={name} type="hidden" name={name} value={value} />
+          ))
+        : null}
+
       <div>
         <FieldLabel htmlFor="name">Child&apos;s name</FieldLabel>
-        <Input id="name" name="name" required maxLength={60} />
+        <Input id="name" name="name" required maxLength={60} defaultValue={defaultValues?.name} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <FieldLabel htmlFor="age">Age</FieldLabel>
-          <Input id="age" name="age" type="number" min={4} max={14} required />
+          <Input
+            id="age"
+            name="age"
+            type="number"
+            min={4}
+            max={14}
+            required
+            defaultValue={defaultValues?.age}
+          />
         </div>
         <div>
           <FieldLabel htmlFor="grade">Grade</FieldLabel>
-          <Select id="grade" name="grade" defaultValue="">
+          <Select id="grade" name="grade" defaultValue={defaultValues?.grade ?? ""}>
             <option value="">Select grade</option>
             {GRADE_OPTIONS.map((grade) => (
               <option key={grade} value={grade}>
@@ -61,7 +94,11 @@ export function ChildForm({ action, subjects, submitLabel }: ChildFormProps) {
 
       <div>
         <FieldLabel htmlFor="homeLanguage">Home language</FieldLabel>
-        <Select id="homeLanguage" name="homeLanguage" defaultValue={HOME_LANGUAGES[0].value}>
+        <Select
+          id="homeLanguage"
+          name="homeLanguage"
+          defaultValue={defaultValues?.homeLanguage ?? HOME_LANGUAGES[0].value}
+        >
           {HOME_LANGUAGES.map((lang) => (
             <option key={lang.value} value={lang.value}>
               {lang.label}
