@@ -60,6 +60,9 @@ export default async function ParentDashboardPage() {
               </div>
 
               <div className="mt-4 flex gap-2">
+                <Link href={`/parent/practice/new?child=${child.id}`} className="flex-1">
+                  <Button className="w-full">Create Practice</Button>
+                </Link>
                 <Link href={`/child/${child.id}/dashboard`} className="flex-1">
                   <Button variant="secondary" className="w-full">
                     View as child

@@ -121,7 +121,7 @@ export type MathsAnswerData = z.infer<typeof mathsAnswerSchema>;
 export type TranslationData = z.infer<typeof translationSchema>;
 export type SentenceBuildingData = z.infer<typeof sentenceBuildingSchema>;
 
-export const ACTIVITY_TYPES: ActivityType[] = [
+export const ACTIVITY_TYPES = [
   "multiple_choice",
   "match_pairs",
   "flash_cards",
@@ -132,7 +132,9 @@ export const ACTIVITY_TYPES: ActivityType[] = [
   "maths_answer",
   "translation",
   "sentence_building",
-];
+] as const satisfies readonly ActivityType[];
+
+export const activityTypeSchema = z.enum(ACTIVITY_TYPES);
 
 export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
   multiple_choice: "Multiple choice",
