@@ -220,12 +220,26 @@ export type WeeklyReportRow = {
   created_at: string;
 };
 
+/** Matches postgrest-js's `GenericRelationship` shape. */
+type Rel<
+  FK extends string,
+  Cols extends string[],
+  Ref extends string,
+  RefCols extends string[],
+> = {
+  foreignKeyName: FK;
+  columns: Cols;
+  isOneToOne: false;
+  referencedRelation: Ref;
+  referencedColumns: RefCols;
+};
+
 /** Shorthand matching postgrest-js's `GenericTable` shape (adds `Relationships`). */
-type Table<Row, Insert, Update = Partial<Row>> = {
+type Table<Row, Insert, Update = Partial<Row>, Relationships extends unknown[] = []> = {
   Row: Row;
   Insert: Insert;
   Update: Update;
-  Relationships: [];
+  Relationships: Relationships;
 };
 
 export interface Database {
@@ -235,7 +249,9 @@ export interface Database {
       parent_profiles: Table<
         ParentProfileRow,
         Omit<ParentProfileRow, "id" | "created_at" | "locale" | "timezone"> &
-          Partial<Pick<ParentProfileRow, "id" | "locale" | "timezone">>
+          Partial<Pick<ParentProfileRow, "id" | "locale" | "timezone">>,
+        Partial<ParentProfileRow>,
+        [Rel<"parent_profiles_user_id_fkey", ["user_id"], "users", ["id"]>]
       >;
       children: Table<
         ChildRow,
@@ -243,24 +259,130 @@ export interface Database {
           ChildRow,
           "id" | "created_at" | "total_xp" | "level" | "current_streak" | "longest_streak"
         > &
-          Partial<Pick<ChildRow, "total_xp" | "level" | "current_streak" | "longest_streak">>
+          Partial<Pick<ChildRow, "total_xp" | "level" | "current_streak" | "longest_streak">>,
+        Partial<ChildRow>,
+        [Rel<"children_parent_id_fkey", ["parent_id"], "parent_profiles", ["id"]>]
       >;
-      child_learning_priorities: Table<ChildLearningPriorityRow, ChildLearningPriorityRow>;
+      child_learning_priorities: Table<
+        ChildLearningPriorityRow,
+        ChildLearningPriorityRow,
+        Partial<ChildLearningPriorityRow>,
+        [
+          Rel<"child_learning_priorities_child_id_fkey", ["child_id"], "children", ["id"]>,
+          Rel<"child_learning_priorities_subject_id_fkey", ["subject_id"], "subjects", ["id"]>,
+        ]
+      >;
       subjects: Table<SubjectRow, Partial<SubjectRow>>;
-      skills: Table<SkillRow, Partial<SkillRow>>;
+      skills: Table<
+        SkillRow,
+        Partial<SkillRow>,
+        Partial<SkillRow>,
+        [Rel<"skills_subject_id_fkey", ["subject_id"], "subjects", ["id"]>]
+      >;
       difficulty_levels: Table<DifficultyLevelRow, Partial<DifficultyLevelRow>>;
-      activity_templates: Table<ActivityTemplateRow, Partial<ActivityTemplateRow>>;
+      activity_templates: Table<
+        ActivityTemplateRow,
+        Partial<ActivityTemplateRow>,
+        Partial<ActivityTemplateRow>,
+        [
+          Rel<"activity_templates_subject_id_fkey", ["subject_id"], "subjects", ["id"]>,
+          Rel<"activity_templates_skill_id_fkey", ["skill_id"], "skills", ["id"]>,
+        ]
+      >;
       badges: Table<BadgeRow, Partial<BadgeRow>>;
-      practice_sets: Table<PracticeSetRow, Omit<PracticeSetRow, "id" | "created_at">>;
-      activities: Table<ActivityRow, Omit<ActivityRow, "id">>;
-      questions: Table<QuestionRow, Omit<QuestionRow, "id">>;
-      assignments: Table<AssignmentRow, Omit<AssignmentRow, "id" | "assigned_at">>;
-      attempts: Table<AttemptRow, Omit<AttemptRow, "id" | "attempted_at">>;
-      child_skill_progress: Table<ChildSkillProgressRow, Omit<ChildSkillProgressRow, "id" | "updated_at">>;
-      xp_events: Table<XpEventRow, Omit<XpEventRow, "id" | "created_at">>;
-      streaks: Table<StreakRow, Omit<StreakRow, "id">>;
-      child_badges: Table<ChildBadgeRow, Omit<ChildBadgeRow, "id" | "earned_at">>;
-      weekly_reports: Table<WeeklyReportRow, Omit<WeeklyReportRow, "id" | "created_at">>;
+      practice_sets: Table<
+        PracticeSetRow,
+        Omit<PracticeSetRow, "id" | "created_at">,
+        Partial<PracticeSetRow>,
+        [
+          Rel<"practice_sets_parent_id_fkey", ["parent_id"], "parent_profiles", ["id"]>,
+          Rel<"practice_sets_child_id_fkey", ["child_id"], "children", ["id"]>,
+          Rel<"practice_sets_subject_id_fkey", ["subject_id"], "subjects", ["id"]>,
+        ]
+      >;
+      activities: Table<
+        ActivityRow,
+        Omit<ActivityRow, "id">,
+        Partial<ActivityRow>,
+        [
+          Rel<"activities_practice_set_id_fkey", ["practice_set_id"], "practice_sets", ["id"]>,
+          Rel<"activities_skill_id_fkey", ["skill_id"], "skills", ["id"]>,
+          Rel<
+            "activities_difficulty_level_id_fkey",
+            ["difficulty_level_id"],
+            "difficulty_levels",
+            ["id"]
+          >,
+        ]
+      >;
+      questions: Table<
+        QuestionRow,
+        Omit<QuestionRow, "id">,
+        Partial<QuestionRow>,
+        [Rel<"questions_activity_id_fkey", ["activity_id"], "activities", ["id"]>]
+      >;
+      assignments: Table<
+        AssignmentRow,
+        Omit<AssignmentRow, "id" | "assigned_at">,
+        Partial<AssignmentRow>,
+        [
+          Rel<"assignments_practice_set_id_fkey", ["practice_set_id"], "practice_sets", ["id"]>,
+          Rel<"assignments_child_id_fkey", ["child_id"], "children", ["id"]>,
+          Rel<"assignments_assigned_by_fkey", ["assigned_by"], "parent_profiles", ["id"]>,
+        ]
+      >;
+      attempts: Table<
+        AttemptRow,
+        Omit<AttemptRow, "id" | "attempted_at">,
+        Partial<AttemptRow>,
+        [
+          Rel<"attempts_child_id_fkey", ["child_id"], "children", ["id"]>,
+          Rel<"attempts_assignment_id_fkey", ["assignment_id"], "assignments", ["id"]>,
+          Rel<"attempts_activity_id_fkey", ["activity_id"], "activities", ["id"]>,
+          Rel<"attempts_question_id_fkey", ["question_id"], "questions", ["id"]>,
+          Rel<"attempts_skill_id_fkey", ["skill_id"], "skills", ["id"]>,
+        ]
+      >;
+      child_skill_progress: Table<
+        ChildSkillProgressRow,
+        Omit<ChildSkillProgressRow, "id" | "updated_at">,
+        Partial<ChildSkillProgressRow>,
+        [
+          Rel<"child_skill_progress_child_id_fkey", ["child_id"], "children", ["id"]>,
+          Rel<"child_skill_progress_skill_id_fkey", ["skill_id"], "skills", ["id"]>,
+        ]
+      >;
+      xp_events: Table<
+        XpEventRow,
+        Omit<XpEventRow, "id" | "created_at">,
+        Partial<XpEventRow>,
+        [Rel<"xp_events_child_id_fkey", ["child_id"], "children", ["id"]>]
+      >;
+      streaks: Table<
+        StreakRow,
+        Omit<StreakRow, "id">,
+        Partial<StreakRow>,
+        [Rel<"streaks_child_id_fkey", ["child_id"], "children", ["id"]>]
+      >;
+      child_badges: Table<
+        ChildBadgeRow,
+        Omit<ChildBadgeRow, "id" | "earned_at">,
+        Partial<ChildBadgeRow>,
+        [
+          Rel<"child_badges_child_id_fkey", ["child_id"], "children", ["id"]>,
+          Rel<"child_badges_badge_id_fkey", ["badge_id"], "badges", ["id"]>,
+        ]
+      >;
+      weekly_reports: Table<
+        WeeklyReportRow,
+        Omit<WeeklyReportRow, "id" | "created_at">,
+        Partial<WeeklyReportRow>,
+        [
+          Rel<"weekly_reports_child_id_fkey", ["child_id"], "children", ["id"]>,
+          Rel<"weekly_reports_strongest_skill_id_fkey", ["strongest_skill_id"], "skills", ["id"]>,
+          Rel<"weekly_reports_weakest_skill_id_fkey", ["weakest_skill_id"], "skills", ["id"]>,
+        ]
+      >;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

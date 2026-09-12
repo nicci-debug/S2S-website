@@ -1,8 +1,8 @@
 import "server-only";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import type { ParentProfileRow } from "@/types/database";
+import type { ChildRow, ParentProfileRow } from "@/types/database";
 
 /**
  * Ensures a parent_profiles row exists for this auth user. Signup already
@@ -58,4 +58,31 @@ export async function requireParentSession() {
   );
 
   return { supabase, user, parentProfile };
+}
+
+/**
+ * Guard for every /child/[childId]/** route. The child never authenticates
+ * directly in V1 — this runs inside the parent's session and 404s (rather
+ * than redirecting, to avoid leaking whether a childId exists) if the
+ * child doesn't belong to the signed-in parent.
+ */
+export async function requireChildAccess(childId: string): Promise<{
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  parentProfile: ParentProfileRow;
+  child: ChildRow;
+}> {
+  const { supabase, parentProfile } = await requireParentSession();
+
+  const { data: child } = await supabase
+    .from("children")
+    .select("*")
+    .eq("id", childId)
+    .eq("parent_id", parentProfile.id)
+    .maybeSingle();
+
+  if (!child) {
+    notFound();
+  }
+
+  return { supabase, parentProfile, child };
 }
