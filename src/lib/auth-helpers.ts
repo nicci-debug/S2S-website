@@ -2,7 +2,7 @@ import "server-only";
 import { redirect, notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import type { ChildRow, ParentProfileRow } from "@/types/database";
+import type { ChildRow, ParentProfileRow, UserRow } from "@/types/database";
 
 /**
  * Ensures a parent_profiles row exists for this auth user. Signup already
@@ -85,4 +85,33 @@ export async function requireChildAccess(childId: string): Promise<{
   }
 
   return { supabase, parentProfile, child };
+}
+
+/**
+ * Guard for every /admin/** route. Admin status is `users.role === 'admin'`
+ * — there is no self-service way to become an admin (see README.md); it is
+ * granted by updating that column directly in the database. Redirects to
+ * `/` (not a 404) so a signed-in non-admin gets a clear "not for you"
+ * rather than a broken link.
+ */
+export async function requireAdminSession(): Promise<{
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  appUser: UserRow;
+}> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: appUser } = await supabase.from("users").select("*").eq("id", user.id).maybeSingle();
+
+  if (!appUser || appUser.role !== "admin") {
+    redirect("/");
+  }
+
+  return { supabase, appUser };
 }

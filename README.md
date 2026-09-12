@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Zumi
 
-## Getting Started
+Turn this week's schoolwork into 10 minutes of personalised practice.
 
-First, run the development server:
+See [PRODUCT.md](./PRODUCT.md), [ARCHITECTURE.md](./ARCHITECTURE.md),
+[DATABASE.md](./DATABASE.md) and [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
+for the full product spec, system design, database schema and phased build
+plan.
+
+## Stack
+
+Next.js (App Router) + TypeScript (strict) + Tailwind CSS, Supabase
+(Postgres, Auth, Storage), Zod validation, a server-side AI abstraction with
+a provider interface (`src/lib/ai`).
+
+## Local setup
 
 ```bash
+npm install
+cp .env.example .env.local   # fill in your Supabase project's values
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Supabase project
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Create a project at [supabase.com](https://supabase.com) (or run one
+   locally with the Supabase CLI).
+2. Apply the migrations in `supabase/migrations/` in order (via the SQL
+   editor, `supabase db push`, or `psql`), then `supabase/seed.sql` for the
+   starter subjects/skills/difficulty levels/badges.
+3. Copy the project's URL, anon key and service role key into `.env.local`
+   as `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and
+   `SUPABASE_SERVICE_ROLE_KEY`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Without a Supabase project attached, the public marketing page and the
+activity engine's own preview still render, but every authenticated route
+(parent/child/admin) will show a clear "missing env var" error rather than
+working — there's no mock-DB fallback for those.
 
-## Learn More
+### AI generation
 
-To learn more about Next.js, take a look at the following resources:
+`ANTHROPIC_API_KEY` is optional. Without it, "Generate with AI" uses a
+deterministic, offline `MockProvider` so the whole pipeline works with zero
+external secrets (see `src/lib/ai/mockProvider.ts`). Set the key to use the
+real Claude-backed provider instead — no other code changes needed.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Becoming an admin
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+There's no self-service admin signup (by design — see PRODUCT.md's safety
+section). After signing up normally as a parent, grant yourself admin
+access directly in the database:
 
-## Deploy on Vercel
+```sql
+update public.users set role = 'admin' where email = 'you@example.com';
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Then visit `/admin`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+- `npm run dev` — start the dev server
+- `npm run build` — production build (also runs the TypeScript check)
+- `npm run lint` — ESLint
+
+## Project layout
+
+See ARCHITECTURE.md §2 for the full module layout. Short version:
+`src/app` is routes (grouped into public, `/parent`, `/child`, `/admin`,
+and `/api`), `src/components/activity-engine` is the generic
+render-any-activity-type engine, `src/lib` is business logic (activity
+schemas, grading, adaptive learning, gamification, AI), and
+`supabase/migrations` is the database schema.
