@@ -13,6 +13,7 @@ export const practiceSetDraftSchema = z.object({
         type: activityTypeSchema,
         title: z.string().trim().min(1).max(120),
         instructions: z.string().max(500).optional(),
+        skillId: z.string().min(1).optional(),
         questions: z.array(questionDataSchema).min(1, "Add at least one question"),
       }),
     )

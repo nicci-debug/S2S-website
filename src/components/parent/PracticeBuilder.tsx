@@ -21,9 +21,15 @@ interface SubjectOption {
   name: string;
 }
 
+interface SkillOption {
+  id: string;
+  name: string;
+}
+
 interface PracticeBuilderProps {
   childOptions: ChildOption[];
   subjects: SubjectOption[];
+  skillsBySubject: Record<string, SkillOption[]>;
   defaultChildId?: string;
 }
 
@@ -39,7 +45,12 @@ function newActivity(type: ActivityType): DraftActivity {
   };
 }
 
-export function PracticeBuilder({ childOptions, subjects, defaultChildId }: PracticeBuilderProps) {
+export function PracticeBuilder({
+  childOptions,
+  subjects,
+  skillsBySubject,
+  defaultChildId,
+}: PracticeBuilderProps) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(createManualPracticeSetAction, initialState);
 
@@ -87,6 +98,7 @@ export function PracticeBuilder({ childOptions, subjects, defaultChildId }: Prac
       type: a.type,
       title: a.title,
       instructions: a.instructions || undefined,
+      skillId: a.skillId || undefined,
       questions: a.questions,
     })),
   });
@@ -239,6 +251,25 @@ export function PracticeBuilder({ childOptions, subjects, defaultChildId }: Prac
               onChange={(e) => updateActivity(activity.tempId, { title: e.target.value })}
             />
           </div>
+          {(skillsBySubject[subjectId]?.length ?? 0) > 0 ? (
+            <div className="mb-3">
+              <FieldLabel htmlFor={`skill-${activity.tempId}`} hint="optional — enables progress tracking">
+                Skill
+              </FieldLabel>
+              <Select
+                id={`skill-${activity.tempId}`}
+                value={activity.skillId ?? ""}
+                onChange={(e) => updateActivity(activity.tempId, { skillId: e.target.value || null })}
+              >
+                <option value="">No specific skill</option>
+                {skillsBySubject[subjectId]?.map((skill) => (
+                  <option key={skill.id} value={skill.id}>
+                    {skill.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          ) : null}
           <div className="space-y-3">
             {activity.questions.map((question, qIndex) => (
               <QuestionEditor

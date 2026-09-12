@@ -52,7 +52,7 @@ export async function persistAndAssignPracticeSet(
       .from("activities")
       .insert({
         practice_set_id: practiceSet.id,
-        skill_id: null,
+        skill_id: activity.skillId ?? null,
         type: activity.type,
         title: activity.title,
         instructions: activity.instructions ?? null,
