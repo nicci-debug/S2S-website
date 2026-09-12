@@ -22,23 +22,23 @@ export type PracticeSetSourceType = "manual" | "ai" | "admin" | "upload";
 export type PracticeSetStatus = "draft" | "ready" | "assigned" | "archived";
 export type AssignmentStatus = "assigned" | "in_progress" | "completed";
 
-export interface UserRow {
+export type UserRow = {
   id: string;
   email: string;
   role: UserRole;
   created_at: string;
-}
+};
 
-export interface ParentProfileRow {
+export type ParentProfileRow = {
   id: string;
   user_id: string;
   display_name: string;
   locale: string;
   timezone: string;
   created_at: string;
-}
+};
 
-export interface ChildRow {
+export type ChildRow = {
   id: string;
   parent_id: string;
   name: string;
@@ -51,15 +51,15 @@ export interface ChildRow {
   current_streak: number;
   longest_streak: number;
   created_at: string;
-}
+};
 
-export interface ChildLearningPriorityRow {
+export type ChildLearningPriorityRow = {
   child_id: string;
   subject_id: string;
   priority: number;
-}
+};
 
-export interface SubjectRow {
+export type SubjectRow = {
   id: string;
   code: string;
   name: string;
@@ -67,9 +67,9 @@ export interface SubjectRow {
   sort_order: number;
   is_active: boolean;
   created_at: string;
-}
+};
 
-export interface SkillRow {
+export type SkillRow = {
   id: string;
   subject_id: string;
   code: string;
@@ -79,16 +79,16 @@ export interface SkillRow {
   max_age: number;
   is_active: boolean;
   created_at: string;
-}
+};
 
-export interface DifficultyLevelRow {
+export type DifficultyLevelRow = {
   id: string;
   code: string;
   label: string;
   rank: number;
-}
+};
 
-export interface ActivityTemplateRow {
+export type ActivityTemplateRow = {
   id: string;
   subject_id: string;
   skill_id: string | null;
@@ -97,9 +97,9 @@ export interface ActivityTemplateRow {
   prompt_template: string;
   is_active: boolean;
   created_at: string;
-}
+};
 
-export interface BadgeRow {
+export type BadgeRow = {
   id: string;
   code: string;
   name: string;
@@ -108,9 +108,9 @@ export interface BadgeRow {
   criteria: Record<string, unknown>;
   is_active: boolean;
   created_at: string;
-}
+};
 
-export interface PracticeSetRow {
+export type PracticeSetRow = {
   id: string;
   parent_id: string | null;
   child_id: string | null;
@@ -121,9 +121,9 @@ export interface PracticeSetRow {
   status: PracticeSetStatus;
   created_by: string | null;
   created_at: string;
-}
+};
 
-export interface ActivityRow {
+export type ActivityRow = {
   id: string;
   practice_set_id: string;
   skill_id: string | null;
@@ -132,16 +132,16 @@ export interface ActivityRow {
   instructions: string | null;
   difficulty_level_id: string | null;
   sort_order: number;
-}
+};
 
-export interface QuestionRow {
+export type QuestionRow = {
   id: string;
   activity_id: string;
   data: Record<string, unknown>;
   sort_order: number;
-}
+};
 
-export interface AssignmentRow {
+export type AssignmentRow = {
   id: string;
   practice_set_id: string;
   child_id: string;
@@ -150,9 +150,9 @@ export interface AssignmentRow {
   due_date: string | null;
   status: AssignmentStatus;
   completed_at: string | null;
-}
+};
 
-export interface AttemptRow {
+export type AttemptRow = {
   id: string;
   child_id: string;
   assignment_id: string | null;
@@ -163,9 +163,9 @@ export interface AttemptRow {
   is_correct: boolean;
   time_taken_ms: number | null;
   attempted_at: string;
-}
+};
 
-export interface ChildSkillProgressRow {
+export type ChildSkillProgressRow = {
   id: string;
   child_id: string;
   skill_id: string;
@@ -178,34 +178,34 @@ export interface ChildSkillProgressRow {
   last_practised_at: string | null;
   next_review_at: string | null;
   updated_at: string;
-}
+};
 
-export interface XpEventRow {
+export type XpEventRow = {
   id: string;
   child_id: string;
   amount: number;
   reason: string;
   related_assignment_id: string | null;
   created_at: string;
-}
+};
 
-export interface StreakRow {
+export type StreakRow = {
   id: string;
   child_id: string;
   current_streak: number;
   longest_streak: number;
   last_activity_date: string | null;
   used_freeze_at: string | null;
-}
+};
 
-export interface ChildBadgeRow {
+export type ChildBadgeRow = {
   id: string;
   child_id: string;
   badge_id: string;
   earned_at: string;
-}
+};
 
-export interface WeeklyReportRow {
+export type WeeklyReportRow = {
   id: string;
   child_id: string;
   week_start: string;
@@ -218,90 +218,51 @@ export interface WeeklyReportRow {
   summary_text: string;
   recommended_focus: string | null;
   created_at: string;
-}
+};
+
+/** Shorthand matching postgrest-js's `GenericTable` shape (adds `Relationships`). */
+type Table<Row, Insert, Update = Partial<Row>> = {
+  Row: Row;
+  Insert: Insert;
+  Update: Update;
+  Relationships: [];
+};
 
 export interface Database {
   public: {
     Tables: {
-      users: { Row: UserRow; Insert: Partial<UserRow>; Update: Partial<UserRow> };
-      parent_profiles: {
-        Row: ParentProfileRow;
-        Insert: Omit<ParentProfileRow, "id" | "created_at"> & { id?: string };
-        Update: Partial<ParentProfileRow>;
-      };
-      children: {
-        Row: ChildRow;
-        Insert: Omit<
+      users: Table<UserRow, Partial<UserRow>>;
+      parent_profiles: Table<
+        ParentProfileRow,
+        Omit<ParentProfileRow, "id" | "created_at" | "locale" | "timezone"> &
+          Partial<Pick<ParentProfileRow, "id" | "locale" | "timezone">>
+      >;
+      children: Table<
+        ChildRow,
+        Omit<
           ChildRow,
           "id" | "created_at" | "total_xp" | "level" | "current_streak" | "longest_streak"
         > &
-          Partial<Pick<ChildRow, "total_xp" | "level" | "current_streak" | "longest_streak">>;
-        Update: Partial<ChildRow>;
-      };
-      child_learning_priorities: {
-        Row: ChildLearningPriorityRow;
-        Insert: ChildLearningPriorityRow;
-        Update: Partial<ChildLearningPriorityRow>;
-      };
-      subjects: { Row: SubjectRow; Insert: Partial<SubjectRow>; Update: Partial<SubjectRow> };
-      skills: { Row: SkillRow; Insert: Partial<SkillRow>; Update: Partial<SkillRow> };
-      difficulty_levels: {
-        Row: DifficultyLevelRow;
-        Insert: Partial<DifficultyLevelRow>;
-        Update: Partial<DifficultyLevelRow>;
-      };
-      activity_templates: {
-        Row: ActivityTemplateRow;
-        Insert: Partial<ActivityTemplateRow>;
-        Update: Partial<ActivityTemplateRow>;
-      };
-      badges: { Row: BadgeRow; Insert: Partial<BadgeRow>; Update: Partial<BadgeRow> };
-      practice_sets: {
-        Row: PracticeSetRow;
-        Insert: Omit<PracticeSetRow, "id" | "created_at">;
-        Update: Partial<PracticeSetRow>;
-      };
-      activities: {
-        Row: ActivityRow;
-        Insert: Omit<ActivityRow, "id">;
-        Update: Partial<ActivityRow>;
-      };
-      questions: {
-        Row: QuestionRow;
-        Insert: Omit<QuestionRow, "id">;
-        Update: Partial<QuestionRow>;
-      };
-      assignments: {
-        Row: AssignmentRow;
-        Insert: Omit<AssignmentRow, "id" | "assigned_at">;
-        Update: Partial<AssignmentRow>;
-      };
-      attempts: {
-        Row: AttemptRow;
-        Insert: Omit<AttemptRow, "id" | "attempted_at">;
-        Update: Partial<AttemptRow>;
-      };
-      child_skill_progress: {
-        Row: ChildSkillProgressRow;
-        Insert: Omit<ChildSkillProgressRow, "id" | "updated_at">;
-        Update: Partial<ChildSkillProgressRow>;
-      };
-      xp_events: {
-        Row: XpEventRow;
-        Insert: Omit<XpEventRow, "id" | "created_at">;
-        Update: Partial<XpEventRow>;
-      };
-      streaks: { Row: StreakRow; Insert: Omit<StreakRow, "id">; Update: Partial<StreakRow> };
-      child_badges: {
-        Row: ChildBadgeRow;
-        Insert: Omit<ChildBadgeRow, "id" | "earned_at">;
-        Update: Partial<ChildBadgeRow>;
-      };
-      weekly_reports: {
-        Row: WeeklyReportRow;
-        Insert: Omit<WeeklyReportRow, "id" | "created_at">;
-        Update: Partial<WeeklyReportRow>;
-      };
+          Partial<Pick<ChildRow, "total_xp" | "level" | "current_streak" | "longest_streak">>
+      >;
+      child_learning_priorities: Table<ChildLearningPriorityRow, ChildLearningPriorityRow>;
+      subjects: Table<SubjectRow, Partial<SubjectRow>>;
+      skills: Table<SkillRow, Partial<SkillRow>>;
+      difficulty_levels: Table<DifficultyLevelRow, Partial<DifficultyLevelRow>>;
+      activity_templates: Table<ActivityTemplateRow, Partial<ActivityTemplateRow>>;
+      badges: Table<BadgeRow, Partial<BadgeRow>>;
+      practice_sets: Table<PracticeSetRow, Omit<PracticeSetRow, "id" | "created_at">>;
+      activities: Table<ActivityRow, Omit<ActivityRow, "id">>;
+      questions: Table<QuestionRow, Omit<QuestionRow, "id">>;
+      assignments: Table<AssignmentRow, Omit<AssignmentRow, "id" | "assigned_at">>;
+      attempts: Table<AttemptRow, Omit<AttemptRow, "id" | "attempted_at">>;
+      child_skill_progress: Table<ChildSkillProgressRow, Omit<ChildSkillProgressRow, "id" | "updated_at">>;
+      xp_events: Table<XpEventRow, Omit<XpEventRow, "id" | "created_at">>;
+      streaks: Table<StreakRow, Omit<StreakRow, "id">>;
+      child_badges: Table<ChildBadgeRow, Omit<ChildBadgeRow, "id" | "earned_at">>;
+      weekly_reports: Table<WeeklyReportRow, Omit<WeeklyReportRow, "id" | "created_at">>;
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
   };
 }

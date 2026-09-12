@@ -1,8 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f5ff;
+  --foreground: #241b3a;
+
+  /* Zumi brand palette — energetic but premium, works for 6- and 12-year-olds alike */
+  --zumi-violet-50: #f4f1ff;
+  --zumi-violet-100: #e8e1ff;
+  --zumi-violet-300: #b6a4ff;
+  --zumi-violet-500: #7c5cff;
+  --zumi-violet-600: #6a3ffb;
+  --zumi-violet-700: #5730d6;
+  --zumi-violet-900: #2c1966;
+
+  --zumi-coral-400: #ff8a65;
+  --zumi-coral-500: #ff6f4d;
+  --zumi-coral-600: #f0512f;
+
+  --zumi-amber-400: #ffc94d;
+  --zumi-amber-500: #ffb800;
+
+  --zumi-mint-400: #4fd9a8;
+  --zumi-mint-500: #2bc48f;
+
+  --zumi-ink: #241b3a;
+  --zumi-cloud: #f7f5ff;
+  --zumi-slate-500: #6b6480;
+  --zumi-slate-200: #e3ddf5;
 }
 
 @theme inline {
@@ -10,17 +34,32 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-zumi-violet-50: var(--zumi-violet-50);
+  --color-zumi-violet-100: var(--zumi-violet-100);
+  --color-zumi-violet-300: var(--zumi-violet-300);
+  --color-zumi-violet-500: var(--zumi-violet-500);
+  --color-zumi-violet-600: var(--zumi-violet-600);
+  --color-zumi-violet-700: var(--zumi-violet-700);
+  --color-zumi-violet-900: var(--zumi-violet-900);
+
+  --color-zumi-coral-400: var(--zumi-coral-400);
+  --color-zumi-coral-500: var(--zumi-coral-500);
+  --color-zumi-coral-600: var(--zumi-coral-600);
+
+  --color-zumi-amber-400: var(--zumi-amber-400);
+  --color-zumi-amber-500: var(--zumi-amber-500);
+
+  --color-zumi-mint-400: var(--zumi-mint-400);
+  --color-zumi-mint-500: var(--zumi-mint-500);
+
+  --color-zumi-ink: var(--zumi-ink);
+  --color-zumi-cloud: var(--zumi-cloud);
+  --color-zumi-slate-500: var(--zumi-slate-500);
+  --color-zumi-slate-200: var(--zumi-slate-200);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
